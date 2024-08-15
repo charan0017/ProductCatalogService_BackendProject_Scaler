@@ -2,7 +2,7 @@ package org.example.backendproject_restapi.controllers;
 
 import org.example.backendproject_restapi.enums.SortEnum;
 import org.example.backendproject_restapi.models.Product;
-import org.example.backendproject_restapi.services.FakeStoreProductsService;
+import org.example.backendproject_restapi.services.ProductsService.StorageProductsService;
 import org.example.backendproject_restapi.utils.ResponseEntityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,12 +10,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/products")
 public class ProductsController {
     @Autowired
-    FakeStoreProductsService fakeStoreProductsService;
+    StorageProductsService storageProductsService;
 
     @GetMapping
     public ResponseEntity<Object> getProducts(
@@ -32,19 +33,16 @@ public class ProductsController {
         }
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("products", fakeStoreProductsService.getAllProducts(sort, limitValue));
+                    put("products", storageProductsService.getAll(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()));
                 }}
         );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getProduct(@PathVariable("id") Long productId) {
-        if (productId <= 0) {
-            throw new IllegalArgumentException("Product Id is invalid");
-        }
+    public ResponseEntity<Object> getProduct(@PathVariable("id") UUID productId) {
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", fakeStoreProductsService.getProductById(productId));
+                    put("product", storageProductsService.getById(productId));
                 }}
         );
     }
@@ -56,70 +54,31 @@ public class ProductsController {
         }
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", fakeStoreProductsService.createProduct(product));
+                    put("product", storageProductsService.save(product));
                 }}
         );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Object> replaceProduct(@RequestBody Product product, @PathVariable("id") Long productId) {
-        if (productId <= 0) {
-            throw new IllegalArgumentException("Product Id is invalid");
-        }
+    public ResponseEntity<Object> replaceProduct(@RequestBody Product product, @PathVariable("id") UUID productId) {
         if (product.getId() == null || !product.getId().equals(productId)) {
             throw new IllegalArgumentException("Product Id unmatched");
         }
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", fakeStoreProductsService.replaceProduct(product, productId));
+                    put("product", storageProductsService.save(product));
                 }}
         );
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Object> updateProduct(@RequestBody Product product, @PathVariable("id") Long productId) {
-        if (productId <= 0) {
-            throw new IllegalArgumentException("Product Id is invalid");
-        }
+    public ResponseEntity<Object> updateProduct(@RequestBody Product product, @PathVariable("id") UUID productId) {
         if (product.getId() == null || !product.getId().equals(productId)) {
             throw new IllegalArgumentException("Product Id unmatched");
         }
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", fakeStoreProductsService.updateProduct(product, productId));
-                }}
-        );
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteProduct(@PathVariable("id") Long productId) {
-        if (productId <= 0) {
-            throw new IllegalArgumentException("Product Id is invalid");
-        }
-        return ResponseEntityUtil.createResponseEntity(
-                new HashMap<>(){{
-                    put("product", fakeStoreProductsService.deleteProductById(productId));
-                }}
-        );
-    }
-
-    @GetMapping("/categories")
-    public ResponseEntity<Object> getCategories() {
-        return ResponseEntityUtil.createResponseEntity(
-                new HashMap<>(){{
-                    put("categories", fakeStoreProductsService.getAllCategories());
-                }}
-        );
-    }
-
-    @GetMapping("/categories/{categoryName}")
-    public ResponseEntity<Object> getProductsByCategoryName(@PathVariable("categoryName") String categoryName) {
-        if (categoryName == null || categoryName.isBlank()) {
-            throw new IllegalArgumentException("Category Name is invalid");
-        }
-        return ResponseEntityUtil.createResponseEntity(
-                new HashMap<>(){{
-                    put("products", fakeStoreProductsService.getProductsByCategoryName(categoryName));
+                    put("product", storageProductsService.save(product));
                 }}
         );
     }

@@ -1,19 +1,38 @@
 package org.example.backendproject_restapi.models;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.backendproject_restapi.enums.StatusEnum;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Getter
 @Setter
-public abstract class BaseModel {
-    private Long id;
+@MappedSuperclass
+public abstract class BaseModel implements Cloneable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    private Date created_at;
+    @CreationTimestamp
+    private Date createdAt;
 
-    private Date updated_at;
+    @UpdateTimestamp
+    private Date updatedAt;
 
-    private StatusEnum status;
+    @Enumerated(EnumType.ORDINAL)
+    private StatusEnum status = StatusEnum.ACTIVE;
+
+    @Override
+    public BaseModel clone() {
+        try {
+            return (BaseModel) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }

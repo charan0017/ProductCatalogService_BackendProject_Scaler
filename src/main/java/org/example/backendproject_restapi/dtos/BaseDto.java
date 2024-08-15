@@ -1,10 +1,21 @@
 package org.example.backendproject_restapi.dtos;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.validation.Valid;
+import lombok.Data;
+import org.example.backendproject_restapi.enums.StatusEnum;
 
-@Setter
-@Getter
+import java.util.UUID;
+
+@Data
 public abstract class BaseDto {
-    private Long id;
+    @Valid
+
+    @Id
+    private UUID id;
+
+    @Enumerated(EnumType.ORDINAL)
+    private StatusEnum status = StatusEnum.ACTIVE;
 }

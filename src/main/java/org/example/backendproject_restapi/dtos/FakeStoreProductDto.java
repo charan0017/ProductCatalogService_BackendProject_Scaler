@@ -21,7 +21,6 @@ public class FakeStoreProductDto extends BaseDto {
             return null;
         }
         ProductDto productDto = new ProductDto();
-        productDto.setId(fakeStoreProductDto.getId());
         productDto.setName(fakeStoreProductDto.getTitle());
         productDto.setPrice(fakeStoreProductDto.getPrice());
         productDto.setDescription(fakeStoreProductDto.getDescription());
@@ -39,7 +38,6 @@ public class FakeStoreProductDto extends BaseDto {
             return null;
         }
         FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
-        fakeStoreProductDto.setId(productDto.getId());
         fakeStoreProductDto.setTitle(productDto.getName());
         fakeStoreProductDto.setPrice(productDto.getPrice());
         fakeStoreProductDto.setDescription(productDto.getDescription());

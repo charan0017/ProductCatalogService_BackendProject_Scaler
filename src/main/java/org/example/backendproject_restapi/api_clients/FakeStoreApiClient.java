@@ -89,15 +89,7 @@ public class FakeStoreApiClient extends ApiClient {
     }
 
     public List<CategoryDto> getAllCategories() {
-        String[] categories = this.requestForEntityObject(
-                "/products/categories",
-                HttpMethod.GET,
-                null,
-                String[].class
-        );
-        return Arrays.stream(categories)
-                .map(CategoryDto::fromCategoryName)
-                .collect(Collectors.toList());
+        return null;
     }
 
     public List<ProductDto> getProductsByCategoryName(String categoryName) {

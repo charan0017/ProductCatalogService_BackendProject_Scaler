@@ -6,12 +6,11 @@ import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface IService<T> {
-    public T getById(UUID id);
+    public T getById(String id);
 
-    default public boolean isExists(UUID id) {
+    default public boolean isExists(String id) {
         return getById(id) != null;
     }
 

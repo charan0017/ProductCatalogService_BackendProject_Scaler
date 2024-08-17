@@ -1,31 +1,31 @@
 package org.example.backendproject_restapi.models;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.validator.constraints.URL;
+
+import java.math.BigDecimal;
 
 @Getter
 @Setter
 @Entity
 public class Product extends BaseModel {
-    @Column(length = 500)
-    @NotBlank(message = "Product name is mandatory")
+    @Column(nullable = false, length = 500)
     private String name;
 
     @Column(length = 10000)
     private String description;
 
-    private Double price;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal price;
 
-    @URL(message = "Product image url is in invalid format")
+    @Column(nullable = false)
+    private Integer quantity;
+
     private String imageUrl;
 
     @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_product_category"))
     private Category category;
 
     @Override

@@ -15,9 +15,9 @@ public class CategoryDto extends BaseDto {
 
     @NotNull(groups = {OnCreate.class, OnReplace.class}, message = "Category name is mandatory")
     @NotBlank(groups = {OnCreate.class, OnReplace.class}, message = "Category name is mandatory")
-    @Size(min = 3, max = 100, message = "Category name should be between 3 and 100 characters")
+    @Size(min = 3, max = 100, groups = CommonValidation.class, message = "Category name should be between 3 and 100 characters")
     private String name;
 
-    @Size(groups = CommonValidation.class, max = 2000, message = "Category description should have at most 2000 characters")
+    @Size(max = 2000, groups = CommonValidation.class, message = "Category description should have at most 2000 characters")
     private String description;
 }

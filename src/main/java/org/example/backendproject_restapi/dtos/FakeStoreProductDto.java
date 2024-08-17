@@ -3,12 +3,14 @@ package org.example.backendproject_restapi.dtos;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 public class FakeStoreProductDto extends BaseDto {
     private String title;
 
-    private Double price;
+    private BigDecimal price;
 
     private String description;
 

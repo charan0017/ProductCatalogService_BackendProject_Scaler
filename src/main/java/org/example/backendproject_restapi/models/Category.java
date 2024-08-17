@@ -3,7 +3,6 @@ package org.example.backendproject_restapi.models;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +14,6 @@ import java.util.Optional;
 @Entity
 public class Category extends BaseModel {
     @Column(length = 100)
-    @NotBlank(message = "Category name is mandatory")
     private String name;
 
     @Column(length = 2000)

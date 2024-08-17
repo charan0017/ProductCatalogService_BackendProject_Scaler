@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/categories")
@@ -33,7 +32,7 @@ public class CategoriesController {
     private StorageCategoriesService storageCategoriesService;
 
     @GetMapping
-    public ResponseEntity<Object> getAllCategories(
+    public ResponseEntity<?> getAllCategories(
             @Valid @RequestParam("page") Optional<Integer> page,
             @Valid @RequestParam("size") Optional<Integer> size,
             @Valid @RequestParam("sortBy") Optional<String> sortBy,
@@ -41,37 +40,40 @@ public class CategoriesController {
     ) {
         Assert.isTrue(size.isEmpty() || size.get() <= 100, "Size should be less than or equal to 100");
         Sort.Direction sortDirection = orderBy.map(Sort.Direction::fromString).orElse(Sort.Direction.ASC);
-        List<Category> categories = storageCategoriesService.getAll(page, size, sortBy, Optional.of(sortDirection));
+        List<Category> categories = this.storageCategoriesService.getAll(page, size, sortBy, Optional.of(sortDirection));
+        List<CategoryDto> categoryDtoList = categories.stream().map(this.categoryMapper::toDto).toList();
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
-                    put("categories", categories.stream().map(categoryMapper::toDto).toList());
+                    put("categories", categoryDtoList);
                 }}
         );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getCategoryById(@Valid @PathVariable UUID id) {
-        Category category = storageCategoriesService.getById(id);
+    public ResponseEntity<?> getCategoryById(@Valid @PathVariable String id) {
+        Category category = this.storageCategoriesService.getById(id);
+        CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
-                    put("category", categoryMapper.toDto(category));
+                    put("category", categoryDtoResponse);
                 }}
         );
     }
 
     @PostMapping
-    public ResponseEntity<Object> createCategory(@Validated({OnCreate.class, CommonValidation.class}) @RequestBody CategoryDto categoryDto) {
-        Category categoryEntity = categoryMapper.createEntity(categoryDto);
-        Category category = storageCategoriesService.save(categoryEntity);
+    public ResponseEntity<?> createCategory(@Validated({OnCreate.class, CommonValidation.class}) @RequestBody CategoryDto categoryDto) {
+        Category categoryEntity = this.categoryMapper.createEntity(categoryDto);
+        Category category = this.storageCategoriesService.save(categoryEntity);
+        CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
-                    put("category", categoryMapper.toDto(category));
+                    put("category", categoryDtoResponse);
                 }}
         );
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Object> updateCategory(@Valid @PathVariable UUID id, @Validated({OnUpdate.class, CommonValidation.class}) @RequestBody CategoryDto categoryDto) throws JsonProcessingException {
+    public ResponseEntity<?> updateCategory(@Valid @PathVariable String id, @Validated({OnUpdate.class, CommonValidation.class}) @RequestBody CategoryDto categoryDto) throws JsonProcessingException {
         if (categoryDto.getId() != null) {
             Assert.isTrue(categoryDto.getId().equals(id), "Category Id mismatch");
         }
@@ -90,34 +92,36 @@ public class CategoriesController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Object> replaceCategory(@Valid @PathVariable UUID id, @Validated({OnReplace.class, CommonValidation.class}) @RequestBody CategoryDto categoryDto) {
+    public ResponseEntity<?> replaceCategory(@Valid @PathVariable String id, @Validated({OnReplace.class, CommonValidation.class}) @RequestBody CategoryDto categoryDto) {
         if (categoryDto.getId() != null) {
             Assert.isTrue(categoryDto.getId().equals(id), "Category Id mismatch");
         }
 
-        Category sourceCategory = storageCategoriesService.getById(id);
+        Category sourceCategory = this.storageCategoriesService.getById(id);
         Assert.notNull(sourceCategory, "Category not found");
 
-        Category categoryEntity = categoryMapper.replaceEntity(categoryDto, sourceCategory);
-        Category category = storageCategoriesService.save(categoryEntity);
+        Category categoryEntity = this.categoryMapper.replaceEntity(categoryDto, sourceCategory);
+        Category category = this.storageCategoriesService.save(categoryEntity);
+        CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
 
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
-                    put("category", categoryMapper.toDto(category));
+                    put("category", categoryDtoResponse);
                 }}
         );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteCategory(@Valid @PathVariable UUID id) {
-        Category sourceCategory = storageCategoriesService.getById(id);
+    public ResponseEntity<?> deleteCategory(@Valid @PathVariable String id) {
+        Category sourceCategory = this.storageCategoriesService.getById(id);
         Assert.notNull(sourceCategory, "Category not found");
 
-        Category category = storageCategoriesService.delete(sourceCategory);
+        Category category = this.storageCategoriesService.delete(sourceCategory);
+        CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
 
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
-                    put("category", categoryMapper.toDto(category));
+                    put("category", categoryDtoResponse);
                 }}
         );
     }

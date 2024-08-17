@@ -6,16 +6,12 @@ import org.example.backendproject_restapi.models.Category;
 import org.example.backendproject_restapi.repos.CategoriesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Primary
@@ -25,8 +21,8 @@ public class StorageCategoriesService implements ICategoriesService {
     private CategoriesRepository categoriesRepository;
 
     @Override
-    public Category getById(UUID id) {
-        return categoriesRepository.findById(id).orElse(null);
+    public Category getById(String id) {
+        return this.categoriesRepository.findById(id).orElse(null);
     }
 
     @Override
@@ -39,7 +35,11 @@ public class StorageCategoriesService implements ICategoriesService {
         // filtering for status
         Category category = new Category();
         category.setStatus(StatusEnum.ACTIVE);
-        Example<Category> example = Example.of(category);
+        // Customize the ExampleMatcher to ignore null values and specific fields
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnoreNullValues()
+                .withIgnorePaths("id", "name", "description"); // Ignore other fields
+        Example<Category> example = Example.of(category, matcher);
 
         // implement sorting by name in ascending order
         Sort sort = Sort.by(sortDirection.orElse(Sort.Direction.ASC), sortBy.orElse("name"));
@@ -47,12 +47,12 @@ public class StorageCategoriesService implements ICategoriesService {
         // implement pagination with limit 10 and offset 0
         Pageable pageable = PageRequest.of(page.orElse(0), size.orElse(10), sort);
 
-        return categoriesRepository.findAll(example, pageable).toList();
+        return this.categoriesRepository.findAll(example, pageable).toList();
     }
 
     @Override
     public Category save(@Validated @NotNull(message = "Category cannot be null") Category category) {
-        return categoriesRepository.save(category);
+        return this.categoriesRepository.save(category);
     }
 
     @Override

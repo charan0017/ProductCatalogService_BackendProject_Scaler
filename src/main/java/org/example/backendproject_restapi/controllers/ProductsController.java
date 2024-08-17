@@ -1,84 +1,143 @@
 package org.example.backendproject_restapi.controllers;
 
-import org.example.backendproject_restapi.enums.SortEnum;
+import jakarta.validation.Valid;
+import org.example.backendproject_restapi.dtos.ProductDto;
+import org.example.backendproject_restapi.dtos.validator.groups.CommonValidation;
+import org.example.backendproject_restapi.dtos.validator.groups.OnCreate;
+import org.example.backendproject_restapi.dtos.validator.groups.OnReplace;
+import org.example.backendproject_restapi.dtos.validator.groups.OnUpdate;
+import org.example.backendproject_restapi.mappers.ProductMapper;
+import org.example.backendproject_restapi.models.Category;
 import org.example.backendproject_restapi.models.Product;
+import org.example.backendproject_restapi.services.CategoriesService.StorageCategoriesService;
 import org.example.backendproject_restapi.services.ProductsService.StorageProductsService;
 import org.example.backendproject_restapi.utils.ResponseEntityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/products")
 public class ProductsController {
+
     @Autowired
-    StorageProductsService storageProductsService;
+    private ProductMapper productMapper;
+    @Autowired
+    private StorageProductsService storageProductsService;
+    @Autowired
+    private StorageCategoriesService storageCategoriesService;
 
     @GetMapping
-    public ResponseEntity<Object> getProducts(
-            @RequestParam(required = false, defaultValue = "asc") String sort,
-            @RequestParam(required = false, defaultValue = "10") String limit
+    public ResponseEntity<?> getProducts(
+            @Valid @RequestParam("page") Optional<Integer> page,
+            @Valid @RequestParam("size") Optional<Integer> size,
+            @Valid @RequestParam("sortBy") Optional<String> sortBy,
+            @Valid @RequestParam("orderBy") Optional<String> orderBy
     ) {
-        SortEnum sortEnum = SortEnum.fromString(sort);
-        if (sortEnum == null) {
-            throw new IllegalArgumentException("Sort is invalid");
-        }
-        int limitValue = Optional.ofNullable(limit).map(Integer::parseInt).orElse(10);
-        if (limitValue <= 0 || limitValue > 100) {
-            throw new IllegalArgumentException("Limit is invalid");
-        }
+        Assert.isTrue(size.isEmpty() || size.get() <= 100, "Size should be less than or equal to 100");
+        Sort.Direction sortDirection = orderBy.map(Sort.Direction::fromString).orElse(Sort.Direction.ASC);
+        List<Product> products = this.storageProductsService.getAll(page, size, sortBy, Optional.of(sortDirection));
+        List<ProductDto> productDtoList = products.stream().map(this.productMapper::toDto).toList();
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("products", storageProductsService.getAll(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()));
+                    put("products", productDtoList);
                 }}
         );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getProduct(@PathVariable("id") UUID productId) {
+    public ResponseEntity<?> getProductById(@Valid @PathVariable String id) {
+        Product product = this.storageProductsService.getById(id);
+        ProductDto productDtoResponse = this.productMapper.toDto(product);
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", storageProductsService.getById(productId));
+                    put("product", productDtoResponse);
                 }}
         );
     }
 
     @PostMapping
-    public ResponseEntity<Object> createProduct(@RequestBody Product product) {
-        if (product.getId() != null) {
-            throw new IllegalArgumentException("Product Id should not be provided");
-        }
+    public ResponseEntity<?> createProduct(@Validated({OnCreate.class, CommonValidation.class}) @RequestBody ProductDto productDto) {
+        Category productCategory = this.storageCategoriesService.getById(productDto.getCategoryId());
+        Assert.notNull(productCategory, "Category not found");
+        Product productEntity = this.productMapper.createEntity(productDto, productCategory);
+        Product product = this.storageProductsService.save(productEntity);
+        ProductDto productDtoResponse = this.productMapper.toDto(product);
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", storageProductsService.save(product));
-                }}
-        );
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Object> replaceProduct(@RequestBody Product product, @PathVariable("id") UUID productId) {
-        if (product.getId() == null || !product.getId().equals(productId)) {
-            throw new IllegalArgumentException("Product Id unmatched");
-        }
-        return ResponseEntityUtil.createResponseEntity(
-                new HashMap<>(){{
-                    put("product", storageProductsService.save(product));
+                    put("product", productDtoResponse);
                 }}
         );
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Object> updateProduct(@RequestBody Product product, @PathVariable("id") UUID productId) {
-        if (product.getId() == null || !product.getId().equals(productId)) {
-            throw new IllegalArgumentException("Product Id unmatched");
+    public ResponseEntity<?> updateProduct(@Valid @PathVariable String id, @Validated({OnUpdate.class, CommonValidation.class}) @RequestBody ProductDto productDto) {
+        if (productDto.getId() != null) {
+            Assert.isTrue(productDto.getId().equals(id), "Product Id mismatch");
         }
+
+        Category productCategory = null;
+        if (productDto.getCategoryId() != null) {
+            productCategory = this.storageCategoriesService.getById(productDto.getCategoryId());
+            Assert.notNull(productCategory, "Category not found");
+        }
+
+        Product sourceProduct = this.storageProductsService.getById(id);
+        Assert.notNull(sourceProduct, "Product not found");
+
+        productCategory = productCategory == null ? sourceProduct.getCategory() : productCategory;
+        Product productEntity = this.productMapper.mergeEntity(productDto, sourceProduct, productCategory);
+        Product product = this.storageProductsService.save(productEntity);
+        ProductDto productDtoResponse = this.productMapper.toDto(product);
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
-                    put("product", storageProductsService.save(product));
+                    put("product", productDtoResponse);
+                }}
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> replaceProduct(@Valid @PathVariable String id, @Validated({OnReplace.class, CommonValidation.class}) @RequestBody ProductDto productDto) {
+        if (productDto.getId() != null) {
+            Assert.isTrue(productDto.getId().equals(id), "Product Id mismatch");
+        }
+
+        Category productCategory = this.storageCategoriesService.getById(productDto.getCategoryId());
+        Assert.notNull(productCategory, "Category not found");
+
+        Product sourceProduct = this.storageProductsService.getById(id);
+        Assert.notNull(sourceProduct, "Product not found");
+
+        Product productEntity = this.productMapper.replaceEntity(productDto, sourceProduct, productCategory);
+        Product product = this.storageProductsService.save(productEntity);
+        ProductDto productDtoResponse = this.productMapper.toDto(product);
+
+        return ResponseEntityUtil.createResponseEntity(
+                new HashMap<>(){{
+                    put("product", productDtoResponse);
+                }}
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(@Valid @PathVariable String id) {
+        Product sourceProduct = this.storageProductsService.getById(id);
+        Assert.notNull(sourceProduct, "Product not found");
+
+        Product product = this.storageProductsService.delete(sourceProduct);
+        ProductDto productDtoResponse = this.productMapper.toDto(product);
+
+        return ResponseEntityUtil.createResponseEntity(
+                new HashMap<>(){{
+                    put("product", productDtoResponse);
                 }}
         );
     }

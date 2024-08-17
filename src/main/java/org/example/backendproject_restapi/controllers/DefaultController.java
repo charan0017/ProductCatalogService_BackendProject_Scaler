@@ -19,7 +19,7 @@ public class DefaultController {
     private final Date date = new Date();
 
     @GetMapping("/ping")
-    public ResponseEntity<Object> ping() {
+    public ResponseEntity<?> ping() {
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
                     put("appName", appName);
@@ -29,8 +29,10 @@ public class DefaultController {
     }
 
     @RequestMapping(value = "{*path}")
-    public ResponseEntity<ErrorResponse> redirect(@PathVariable(value = "path") String requestPath) {
+    public ResponseEntity<?> redirect(@PathVariable(value = "path") String requestPath) {
         String message = "Invalid path requested: \"http://localhost:" + port.toString() + requestPath + "\"";
-        return new ResponseEntity<>(new ErrorResponse(message, this), HttpStatus.BAD_REQUEST);
+        ErrorResponse errorResponse = new ErrorResponse(message, this);
+        errorResponse.setMessage("Nothing to see here! move along");
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }

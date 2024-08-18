@@ -42,6 +42,7 @@ public class CategoriesController {
         Sort.Direction sortDirection = orderBy.map(Sort.Direction::fromString).orElse(Sort.Direction.ASC);
         List<Category> categories = this.storageCategoriesService.getAll(page, size, sortBy, Optional.of(sortDirection));
         List<CategoryDto> categoryDtoList = categories.stream().map(this.categoryMapper::toDto).toList();
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
                     put("categories", categoryDtoList);
@@ -53,6 +54,7 @@ public class CategoriesController {
     public ResponseEntity<?> getCategoryById(@Valid @PathVariable String id) {
         Category category = this.storageCategoriesService.getById(id);
         CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
                     put("category", categoryDtoResponse);
@@ -65,6 +67,7 @@ public class CategoriesController {
         Category categoryEntity = this.categoryMapper.createEntity(categoryDto);
         Category category = this.storageCategoriesService.save(categoryEntity);
         CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
                     put("category", categoryDtoResponse);
@@ -78,15 +81,16 @@ public class CategoriesController {
             Assert.isTrue(categoryDto.getId().equals(id), "Category Id mismatch");
         }
 
-        Category sourceCategory = storageCategoriesService.getById(id);
+        Category sourceCategory = this.storageCategoriesService.getById(id);
         Assert.notNull(sourceCategory, "Category not found");
 
-        Category categoryEntity = categoryMapper.mergeEntity(categoryDto, sourceCategory);
-        Category category = storageCategoriesService.save(categoryEntity);
+        Category categoryEntity = this.categoryMapper.mergeEntity(categoryDto, sourceCategory);
+        Category category = this.storageCategoriesService.save(categoryEntity);
+        CategoryDto categoryDtoResponse = this.categoryMapper.toDto(category);
 
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>() {{
-                    put("category", categoryMapper.toDto(category));
+                    put("category", categoryDtoResponse);
                 }}
         );
     }

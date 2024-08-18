@@ -45,6 +45,7 @@ public class ProductsController {
         Sort.Direction sortDirection = orderBy.map(Sort.Direction::fromString).orElse(Sort.Direction.ASC);
         List<Product> products = this.storageProductsService.getAll(page, size, sortBy, Optional.of(sortDirection));
         List<ProductDto> productDtoList = products.stream().map(this.productMapper::toDto).toList();
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
                     put("products", productDtoList);
@@ -56,6 +57,7 @@ public class ProductsController {
     public ResponseEntity<?> getProductById(@Valid @PathVariable String id) {
         Product product = this.storageProductsService.getById(id);
         ProductDto productDtoResponse = this.productMapper.toDto(product);
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
                     put("product", productDtoResponse);
@@ -67,9 +69,11 @@ public class ProductsController {
     public ResponseEntity<?> createProduct(@Validated({OnCreate.class, CommonValidation.class}) @RequestBody ProductDto productDto) {
         Category productCategory = this.storageCategoriesService.getById(productDto.getCategoryId());
         Assert.notNull(productCategory, "Category not found");
+
         Product productEntity = this.productMapper.createEntity(productDto, productCategory);
         Product product = this.storageProductsService.save(productEntity);
         ProductDto productDtoResponse = this.productMapper.toDto(product);
+
         return ResponseEntityUtil.createResponseEntity(
                 new HashMap<>(){{
                     put("product", productDtoResponse);
